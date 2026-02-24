@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lexical Analyzer</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E⚙%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E⚙%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+  
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <!-- Highlight.js for code mirror look on input -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+
+<!-- ─────────────────────────────── HEADER ────────────────────────────── 
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="logo" title="Go to home">
+      <span class="logo-icon">⚙</span>
+      <span class="logo-text">Lexical <strong>Analyzer</strong></span>
+    </a>
+    <!--
+    <nav class="header-nav">
+      <a href="#analyzer" class="nav-link active">Analyzer</a>
+      <a href="#about"    class="nav-link">About</a>
+    </nav>
+   
+  </div>
+</header>
+-->
+
+<!-- ──────────────────────────── HERO SECTION ─────────────────────────── -->
+<section class="hero">
+  <div class="hero-inner">
+    <h1 class="hero-title" href="/" class="logo" title="Go to home"><span class="accent">Lexical Analyzer</span>
+    </h1>
+    <p class="hero-sub">
+    The analyzer tokenizes, strips comments, highlights tokens by category, and reports precise error messages — all in your browser.<br> By <strong style ="color: aliceblue;">AHMAD SHARJEEEL</strong> & Team.
+    </p>
+  </div>
+</section>
+
+<!-- ─────────────────────────── MAIN ANALYZER ─────────────────────────── -->
+<main id="analyzer" class="main-layout">
+
+  <!-- ── LEFT: Input panel ─────────────────────────────────────────────── -->
+  <section class="panel input-panel">
+    <div class="panel-header">
+      <h2 class="panel-title">Source Code Input</h2>
+
+      <!-- Language selector -->
+      <div class="lang-selector" role="group" aria-label="Select language">
+        <button class="lang-btn active" data-lang="c" title="C language">
+          <span class="lang-icon">🔵</span> C
+        </button>
+        <button class="lang-btn" data-lang="cpp" title="C++ language">
+          <span class="lang-icon">🟣</span> C++
+        </button>
+        <button class="lang-btn" data-lang="python" title="Python language">
+          <span class="lang-icon">🟡</span> Python
+        </button>
+      </div>
+    </div>
+
+    <!-- Code textarea -->
+    <div class="editor-wrapper">
+      <div class="line-numbers" id="lineNumbers" aria-hidden="true">1</div>
+      <textarea
+        id="codeInput"
+        class="code-editor"
+        spellcheck="false"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        placeholder="// Paste your C, C++, or Python code here…"
+        aria-label="Code input"
+      ></textarea>
+    </div>
+
+    <div class="input-footer">
+      <span class="char-count" id="charCount">0 characters</span>
+      <div class="input-actions">
+        <button class="btn btn-ghost" id="btnClear" title="Clear the editor">
+          🗑 Clear
+        </button>
+        <button class="btn btn-ghost" id="btnLoadSample" title="Load a code sample">
+          📋 Sample
+        </button>
+        <button class="btn btn-primary" id="btnAnalyze" title="Run the lexical analyzer">
+          ▶ Analyze
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── RIGHT: Output panel ───────────────────────────────────────────── -->
+  <section class="panel output-panel">
+    <div class="panel-header">
+      <h2 class="panel-title">Analysis Results</h2>
+      <div class="output-meta" id="outputMeta" hidden>
+        <span class="meta-lang" id="metaLang"></span>
+      </div>
+      <!-- Tab buttons -->
+      <div class="tab-buttons" id="tabButtons" hidden>
+        <button class="tab-btn active" data-tab="tokens">
+          <span class="tab-icon">🏷</span>
+          <span class="tab-label">Tokens</span>
+          <span class="tab-count" id="tabCountTokens">0</span>
+        </button>
+        <button class="tab-btn" data-tab="errors">
+          <span class="tab-icon">🚨</span>
+          <span class="tab-label">Errors</span>
+          <span class="tab-count" id="tabCountErrors">0</span>
+        </button>
+        <button class="tab-btn" data-tab="stats">
+          <span class="tab-icon">📊</span>
+          <span class="tab-label">Stats</span>
+        </button>
+      </div>
+    </div>
+
+
+    <!-- ── Tab Panels (shown after analysis) ──────────────────────────────── -->
+    <div class="tab-panels" id="tabPanels" hidden>
+
+      <!-- ──────────── TOKENS TAB ──────────── -->
+      <div class="tab-panel active" id="panelTokens">
+        <div class="panel-toolbar">
+          <input class="search-box" id="tokenSearch"
+                 type="search" placeholder="Filter… (type or value)" />
+          <select class="filter-select" id="typeFilter" aria-label="Filter by type">
+            <option value="">All types</option>
+          </select>
+        </div>
+        <div class="token-table-wrapper">
+          <table class="token-table" id="tokenTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Type</th>
+                <th>Value</th>
+                <th>Line</th>
+                <th>Col</th>
+              </tr>
+            </thead>
+            <tbody id="tokenBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ──────────── ERRORS TAB ──────────── -->
+      <div class="tab-panel" id="panelErrors">
+        <div class="error-list" id="errorList">
+          <p class="no-errors">✅ No errors found.</p>
+        </div>
+      </div>
+
+      <!-- ──────────── STATS TAB ──────────── -->
+      <div class="tab-panel" id="panelStats">
+        <div class="stats-grid" id="statsGrid"></div>
+        <canvas id="statsChart" class="stats-chart" aria-label="Token type distribution"></canvas>
+      </div>
+
+    </div><!-- /tab-panels -->
+  </section>
+</main>
+
+<!-- ─────────────────────────────── ABOUT ──────────────────────────────── 
+<section id="about" class="about-section">
+  <div class="about-inner">
+    <h2>How It Works</h2>
+    <div class="about-cards">
+      <div class="about-card">
+        <h3>🔍 Language Detection</h3>
+        <p>Pattern-scoring heuristics check for language-exclusive
+           syntax (keywords, operators, comment styles) to identify
+           C, C++, or Python automatically.</p>
+      </div>
+      <div class="about-card">
+        <h3>✂ Comment Elimination</h3>
+        <p><code>//</code> &amp; <code>/* … */</code> for C/C++ and
+           <code>#</code> for Python are stripped before tokenization
+           so they never pollute the token stream.</p>
+      </div>
+      <div class="about-card">
+        <h3>🏷 Precise Tokenization</h3>
+        <p>Every lexeme is classified: keywords, identifiers, literals
+           (int, float, string, char), operators, delimiters,
+           preprocessor directives, and more.</p>
+      </div>
+      <div class="about-card">
+        <h3>🚨 Language-Specific Errors</h3>
+        <p>Each error carries the language prefix ([C Error],
+           [C++ Error], [Python Error]) along with the exact line/
+           column and a human-readable description.</p>
+      </div>
+    </div>
+  </div>
+</section> -->
+
+<!-- ──────────────────────────────── FOOTER ────────────────────────────── -->
+<footer class="site-footer">
+  <p>Lexical Analyzer &copy; 2026 &mdash; By <strong>AHMAD SHARJEEEL</strong> & Team</p>
+</footer>
+
+<!-- Sample codes stored in JS (avoids extra fetch) -->
+<script>
+  window.SAMPLES = {
+    c: `
+#include <stdio.h>
+
+int main() {
+    printf("Hello, I am Ahmad Sharjeel.");
+    printf("CS student passionate about systems programming.");
+    printf("Aimed to build software solutions that solve real-world problems.");
+    return 0;
+}`,
+
+    cpp: `#include <iostream>
+using namespace std;
+int main() {
+    cout << "Hello, I am Ahmad Sharjeel.";
+    cout << "CS student passionate about systems programming.";
+    cout << "Aimed to build software solutions that solve real-world problems.";
+    return 0;
+}`,
+
+    python: `# Python sample
+from LGU import CS_Student
+
+print("Hello, I am Ahmad Sharjeel.")
+print("CS student passionate about systems programming.")
+print("Aimed to build software solutions that solve real-world problems.")
+`,
+  };
+</script>
+<script src="/static/js/app.js" defer></script>
+</body>
+</html>
