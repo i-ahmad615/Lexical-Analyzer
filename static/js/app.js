@@ -10,6 +10,7 @@ const charCount     = document.getElementById("charCount");
 const btnAnalyze    = document.getElementById("btnAnalyze");
 const btnClear      = document.getElementById("btnClear");
 const btnLoadSample = document.getElementById("btnLoadSample");
+const btnCopyTokens = document.getElementById("btnCopyTokens");
 const langBtns      = document.querySelectorAll(".lang-btn");
 
 
@@ -109,6 +110,67 @@ btnLoadSample.addEventListener("click", () => {
   codeInput.value = (samples[selectedLang] || "").trimStart();
   updateLineNumbers();
   resetOutput();
+});
+
+/* ── Copy tokens ──────────────────────────────────────────────────────── */
+btnCopyTokens.addEventListener("click", async () => {
+  if (!allTokens.length) return;
+  
+  // Create HTML table for rich paste (Word, Excel, Google Sheets)
+  let html = '<table border="1" cellpadding="5" cellspacing="0">';
+  html += '<thead><tr><th>#</th><th>Type</th><th>Value</th><th>Line</th><th>Col</th></tr></thead>';
+  html += '<tbody>';
+  
+  // Also create plain text TSV version as fallback
+  let tsv = "#\tType\tValue\tLine\tCol\n";
+  
+  allTokens.forEach((tok, idx) => {
+    const num = idx + 1;
+    const type = tok.type;
+    let value = tok.value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const plainValue = tok.value.replace(/\n/g, '\\n').replace(/\t/g, '\\t');
+    const line = tok.line;
+    const col = tok.column;
+    
+    html += `<tr><td>${num}</td><td>${type}</td><td>${value}</td><td>${line}</td><td>${col}</td></tr>`;
+    tsv += `${num}\t${type}\t${plainValue}\t${line}\t${col}\n`;
+  });
+  
+  html += '</tbody></table>';
+  
+  try {
+    // Copy both HTML and plain text formats
+    const clipboardItem = new ClipboardItem({
+      'text/html': new Blob([html], { type: 'text/html' }),
+      'text/plain': new Blob([tsv], { type: 'text/plain' })
+    });
+    
+    await navigator.clipboard.write([clipboardItem]);
+    
+    // Visual feedback
+    const original = btnCopyTokens.innerHTML;
+    btnCopyTokens.innerHTML = '✅ Copied!';
+    btnCopyTokens.disabled = true;
+    setTimeout(() => {
+      btnCopyTokens.innerHTML = original;
+      btnCopyTokens.disabled = false;
+    }, 2000);
+  } catch (err) {
+    // Fallback to plain TSV if ClipboardItem is not supported
+    try {
+      await navigator.clipboard.writeText(tsv);
+      const original = btnCopyTokens.innerHTML;
+      btnCopyTokens.innerHTML = '✅ Copied!';
+      btnCopyTokens.disabled = true;
+      setTimeout(() => {
+        btnCopyTokens.innerHTML = original;
+        btnCopyTokens.disabled = false;
+      }, 2000);
+    } catch (fallbackErr) {
+      console.error('Failed to copy:', fallbackErr);
+      alert('Failed to copy to clipboard');
+    }
+  }
 });
 
 
